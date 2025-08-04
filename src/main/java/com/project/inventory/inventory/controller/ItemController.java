@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 
 @RestController
 @RequestMapping("/api/items")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ItemController {
     @Autowired
     private ItemService service;
