@@ -3,6 +3,6 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 FROM openjdk:17.0.1-jdk-slim
-COPY  --from=build  /target/search-location-0.0.1-SNAPSHOT.jar inventory.jar
+COPY  --from=build  /target/inventory-0.0.1-SNAPSHOT.jar inventory.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","inventory.jar"]
