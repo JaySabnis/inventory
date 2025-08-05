@@ -54,6 +54,12 @@
 			<artifactId>spring-boot-starter-websocket</artifactId>
 			<version>3.5.4</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.projectreactor/reactor-core -->
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-core</artifactId>
+			<version>3.8.0-M5</version>
+		</dependency>
 
 	</dependencies>
 

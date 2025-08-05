@@ -7,8 +7,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -35,20 +37,19 @@ public class ItemController {
     }
 
     @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public void streamItemUpdates(HttpServletResponse response) throws IOException {
-        response.setHeader("Access-Control-Allow-Origin", "*"); // ✅ CORS header
-        response.setHeader("Cache-Control", "no-cache");
-        response.setHeader("Connection", "keep-alive");
-        response.setHeader("Content-Type", "text/event-stream");
-        response.setCharacterEncoding("UTF-8");
+    public Flux<String> streamItemUpdates() {
+        return service.getItemStream()
+                .map(itemDTO -> {
+                    return toJson(Map.of("action", "update", "object", itemDTO));
+                })
+                .delayElements(Duration.ofMillis(100));
+    }
 
-        service.subscribe(itemDTO -> {
-            try {
-                String json = objectMapper.writeValueAsString(Map.of("action", "update", "object", itemDTO));
-                response.getWriter().write("data: " + json + "\n\n");
-                response.getWriter().flush();
-            } catch (IOException ignored) {
-            }
-        });
+    private String toJson(Object obj) {
+        try {
+            return "data: " + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj) + "\n\n";
+        } catch (Exception e) {
+            return "data: {\"error\":\"serialization error\"}\n\n";
+        }
     }
 }

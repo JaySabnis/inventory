@@ -6,6 +6,8 @@ import com.project.inventory.inventory.respository.ItemRepository;
 import com.project.inventory.inventory.socket.ItemWebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +25,9 @@ public class ItemService {
 
     private final List<Consumer<ItemDTO>> subscribers = new CopyOnWriteArrayList<>();
 
+    private final Sinks.Many<ItemDTO> sink = Sinks.many().multicast().onBackpressureBuffer();
+
+
     public List<ItemDTO> getAllItems() {
         return repository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
@@ -36,8 +41,7 @@ public class ItemService {
             item.setAvailable(dto.isAvailable());
             Item updated = repository.save(item);
             ItemDTO updatedDTO = toDTO(updated);
-            socketHandler.broadcastUpdate("update",updatedDTO);
-            notifySubscribers(updatedDTO);
+            sink.tryEmitNext(updatedDTO);
             return updatedDTO;
         } else {
             throw new RuntimeException("Item not found");
@@ -53,13 +57,8 @@ public class ItemService {
         return dto;
     }
 
-    public void subscribe(Consumer<ItemDTO> consumer) {
-        subscribers.add(consumer);
-    }
 
-    private void notifySubscribers(ItemDTO dto) {
-        for (Consumer<ItemDTO> subscriber : subscribers) {
-            subscriber.accept(dto);
-        }
+    public Flux<ItemDTO> getItemStream() {
+        return sink.asFlux();
     }
 }
